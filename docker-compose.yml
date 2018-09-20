@@ -1,0 +1,55 @@
+version: '2'
+ 
+services:
+
+   hsqldb:
+      image: blacklabelops/hsqldb
+      container_name: hsqldb_srv
+      ports: 
+      - "9001:9001"
+      mem_limit: 1G
+      volumes: 
+      - /opt/database
+      env_file: docker-compose.env
+      environment:
+      - HSQLDB_USER=batch
+      - HSQLDB_PASSWORD=batch
+      - HSQLDB_TRACE=true
+      - HSQLDB_SILENT=false
+      - HSQLDB_REMOTE=true
+      - HSQLDB_DATABASE_NAME=hsqldb
+      - HSQLDB_DATABASE_ALIAS=batch_db
+      - HSQLDB_DATABASE_HOST=192.168.0.15
+      labels:
+            com.blacklabelops.description: "HSQL Development System"
+            com.blacklabelops.service: "hsqldb-server"
+      networks:
+            public_net:
+                ipv4_address: ${HSQLDB_IP}
+   serv1:
+        container_name: serv1
+        build: 
+            context: ./servers/serv1
+            args:
+            - SERV_USER=runuser
+            - SERV_USER_ID=${RUN_UID}
+            - SERV_GROUP=runuser
+            - SERV_GROUP_ID=${RUN_GUID}
+        mem_limit: 1G
+        restart: on-failure
+        networks:
+            public_net:
+                ipv4_address: ${SERV1_IP}
+        volumes:
+        - /home/regen/temp/fileinput/files:/home/runuser/files
+        - /home/regen/temp/logs:/home/runuser/logs
+networks:
+    public_net:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: ${NETWORK_SUBNET}
+volumes:
+    fileinput:
+    logs:
